@@ -1,5 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
+using System;
+using System.Globalization;
+using System.IO;
 using UnrealBuildTool;
 
 public class FMIKit : ModuleRules
@@ -7,6 +10,10 @@ public class FMIKit : ModuleRules
 	public FMIKit(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		
+		string Submodules = Path.GetFullPath(Path.Combine(ModuleDirectory, "../../../../../Submodules/"));
+		
+		PublicIncludePaths.Add(Path.Combine(Submodules, "FMIKit-Simulink/include"));
 		
 		PublicIncludePaths.AddRange(
 			new string[] {

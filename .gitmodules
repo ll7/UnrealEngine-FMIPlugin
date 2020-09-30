@@ -1,0 +1,3 @@
+[submodule "Submodules/FMIKit-Simulink"]
+	path = Submodules/FMIKit-Simulink
+	url = https://github.com/CATIA-Systems/FMIKit-Simulink.git
