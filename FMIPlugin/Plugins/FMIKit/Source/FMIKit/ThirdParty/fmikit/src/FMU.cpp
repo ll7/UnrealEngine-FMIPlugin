@@ -3,7 +3,6 @@
  *  This file is part of FMIKit. See LICENSE.txt in the project  *
  *  root for license information.                                *
  *****************************************************************/
-#include "FMU.h"
 
 #include <iostream>
 #include <stdlib.h>
@@ -20,6 +19,8 @@
 #include <stdarg.h>
 #include <dlfcn.h>
 #endif
+
+#include "FMU.h"
 
 using namespace std;
 using namespace fmikit;
@@ -88,24 +89,8 @@ FMU::FMU(const std::string &guid, const std::string &modelIdentifier, const std:
 #ifdef _WIN32
 	TCHAR fmuLocation[INTERNET_MAX_URL_LENGTH];
 	DWORD fmuLocationLength = INTERNET_MAX_URL_LENGTH;
-	HRESULT result;
-	{
-		int len;
-		int slength = (int)m_unzipDirectory.length() + 1;
-		len = MultiByteToWideChar(CP_ACP, 0, m_unzipDirectory.c_str(), slength, 0, 0);
-		wchar_t* buf = new wchar_t[len];
-		MultiByteToWideChar(CP_ACP, 0, m_unzipDirectory.c_str(), slength, buf, len);
-		std::wstring wResult(buf);
-		delete[] buf;
-		PCWSTR pResult = wResult.c_str();
-		result = UrlCreateFromPath(pResult, fmuLocation, &fmuLocationLength, 0);
-	}
-	{
-		std::wstring wLoc(fmuLocation);
-		std::string sLoc(wLoc.begin(), wLoc.end());
-		m_fmuLocation = sLoc;
-	}
-
+	HRESULT result = UrlCreateFromPath(m_unzipDirectory.c_str(), fmuLocation, &fmuLocationLength, 0);
+    m_fmuLocation = fmuLocation;
 	// TODO: check result
 #else
     m_fmuLocation = "file://" + m_unzipDirectory;
@@ -117,8 +102,6 @@ FMU::FMU(const std::string &guid, const std::string &modelIdentifier, const std:
 	const auto libraryDir = unzipDirectory + "\\binaries\\" + platform();
 	// path to the model DLL
 	const auto libraryPath = libraryDir + "\\" + modelIdentifier + ".dll";
-#elif __APPLE__
-    const auto libraryPath = unzipDirectory + "/binaries/darwin64/" + modelIdentifier + ".dylib";
 #else
     const auto libraryPath = unzipDirectory + "/binaries/linux64/" + modelIdentifier + ".so";
 #endif
@@ -134,8 +117,7 @@ FMU::FMU(const std::string &guid, const std::string &modelIdentifier, const std:
 	// add the binaries directory temporarily to the DLL path to allow discovery of dependencies
 	auto dllDirectoryCookie = AddDllDirectory(dllDirectory.c_str());
 
-	wstring libPath(libraryPath.begin(), libraryPath.end());
-	m_libraryHandle = LoadLibraryEx(libPath.c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	m_libraryHandle = LoadLibraryEx(libraryPath.c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 
 	// remove the binaries directory from the DLL path
 	RemoveDllDirectory(dllDirectoryCookie);
@@ -192,10 +174,10 @@ void FMU::error(const char *message, ...) {
 	cout << buf << endl;
 	logFMUMessage(this, LOG_ERROR, nullptr, message, args);
 	va_end(args);
-	throw runtime_error(buf);
+	//throw runtime_error(buf);
 }
 
-void FMU::logFMUMessage(FMU *instance, fmikit::LogLevel level, const char* category, const char* message, va_list args) {
+void FMU::logFMUMessage(FMU *instance, LogLevel level, const char* category, const char* message, va_list args) {
 	if (level >= instance->logLevel() && m_messageLogger) {
 		char buf[MAX_MESSAGE_SIZE];
 		vsnprintf(buf, MAX_MESSAGE_SIZE, message, args);

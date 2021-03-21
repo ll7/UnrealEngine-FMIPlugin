@@ -1,7 +1,8 @@
-# UnrealEngine-FMIPlugin
+# WIP: Cross-Platform UnrealEngine-FMIPlugin
 
 ![FMUinUE4](docs/fmuUEBP.PNG)
 
+- Cross-Platform (At least Win64 and Linux64)
 - A MVP (minimally viable product) of simulating FMUs within the Unreal Engine environment.
 - This MVP relies on the [FMIKit repositorty](https://github.com/CATIA-Systems/FMIKit-Simulink) (non-simulink portion)
 - Special thanks to Torsten Sommer for his work on FMIKit!
@@ -10,9 +11,10 @@
 # Prerequistes
 
 This work was tested using the following. It may work on something else but no gurantees.
-- Windows 10
-- Unreal Engine 4.25
-- Visual Studio 2019
+- Arch Linux rolling (should not matter, since UE4 ships its own toolchain on linux)
+- Unreal Engine 4.24 source build
+- [Conan UE4 Cli](https://github.com/adamrehn/conan-ue4cli) and l0wl3vels fork of [ue4-conan-recipes](https://github.com/l0wl3vel/ue4-conan-recipes)
+- IDE: VS Code
 
 FMU
 - The included example FMU, `test.fmu`, and is a [Lorenz System model](https://en.wikipedia.org/wiki/Lorenz_system).
@@ -31,9 +33,13 @@ In this current version, the `A_FMU` under `FMIKit C++ Classes/FMIKit/Public` co
 Follow the following steps to get this project up and running on your own computer.
 
 - Download and unzip the folder into your desired location **OR** clone the repository.
-- Open the project `FMIPlugin.uproject` by double-clicking the file.
-- When prompte, rebuild the project click `Yes`.
-  - The project will build and then launch Unreal Engine.
+- Generate VSCode project files : 
+
+  pathtoUE/GenerateProjectFiles.sh -projectfiles -project='pathto/UnrealEngine-FMIPlugin/FMIPlugin/FMIPlugin.uproject' -game -rocket -progress -VSCode
+
+- Open the FMIPlugin/FMIPlugin.code-workspace in VS Code
+- Press CTRL+P and select "Task: Run Build Task" and select "FMIKitEditor Linux Development Build"
+- When the build finished successfully open the FMIPlugin.uproject in UE4
 
 # Test Installation
 

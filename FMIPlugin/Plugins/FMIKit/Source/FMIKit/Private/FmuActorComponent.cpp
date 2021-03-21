@@ -4,7 +4,7 @@
 #include "FmuActorComponent.h"
 #include "GameFramework/Actor.h"
 #include "XmlFile.h"
-#include "unzipper.hpp"
+#include "elzip.hpp"
 
 
 // Sets default values for this component's properties
@@ -39,7 +39,7 @@ void UFmuActorComponent::BeginPlay()
 		std::string sPath = TCHAR_TO_UTF8(*fullPath);
 		size_t lastindex = sPath.find_last_of(".");
 		mUnzipDir = sPath.substr(0, lastindex);
-		unzip(sPath, mUnzipDir);
+		elz::extractZip(sPath, mUnzipDir);
 	}
 
 	// These should be populated from the extracted ModelDescription.xml
