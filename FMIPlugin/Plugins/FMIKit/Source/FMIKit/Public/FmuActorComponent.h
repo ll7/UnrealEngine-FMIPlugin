@@ -7,6 +7,7 @@
 #include "Engine/EngineTypes.h"
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "FmuActorComponent.generated.h"
 
 
@@ -19,13 +20,21 @@ public:
 	// Sets default values for this component's properties
 	UFmuActorComponent();
 
+	UFUNCTION(BlueprintCallable)
+		float getReal(FString Name);
+	UFUNCTION(BlueprintCallable)
+		void setReal(FString Name, float Value);
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void InitializeComponent() override;
 
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 		float SpeedMultiplier = 1.0f;
@@ -34,17 +43,20 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 		float StopTimeMultiplier = 1.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-        FFilePath mPath;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapsAndSets")
+        FFilePath FmuPath;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MapsAndSets")
         TMap<FString, int> mValRefMap;
 
 private:
+
+	bool extractFmu();
+	void importFmuParameters();
+
 	fmikit::FMU2Slave *mFmu = nullptr;
 
-	std::string mUnzipDir;
-	std::string mGuid;
-	std::string mModelIdentifier;
-	std::string mInstanceName;
+	FString mFmuWorkingPath;
+
+	std::string mFmuPath,  mGuid, mModelIdentifier, mInstanceName;
 	fmi2Real mStartTime;
 	fmi2Real mStopTime;
 	fmi2Real mStepSize;
@@ -52,7 +64,4 @@ private:
 	fmi2Real mTimeLast;
 	fmi2Real mTimeNow;
 	bool mLoaded = false;
-
-	FVector mStartLocation;
-	FVector mNewLocation;
 };

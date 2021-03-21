@@ -4,7 +4,7 @@
 #include "A_FMU.h"
 
 #include "XmlFile.h"
-#include "unzipper.hpp"
+#include "elzip.hpp"
 
 // Sets default values
 AA_FMU::AA_FMU()
@@ -23,17 +23,17 @@ void AA_FMU::OnConstruction(const FTransform& Transform)
 void AA_FMU::PostEditChangeProperty(struct FPropertyChangedEvent& e)
 {
 	Super::PostEditChangeProperty(e);
-
-	if (e.MemberProperty->GetFName().ToString() == TEXT("mPath"))
+	UE_LOG(LogTemp, Warning, TEXT("Property changed: %s"), *e.GetPropertyName().ToString());
+	if (*e.MemberProperty->GetFName().ToString() == TEXT("mPath"))
 	{
 		ExtractFMU();
 		mResults.Empty();
 	}
-	if (mAutoSimulateTick && e.MemberProperty->GetFName().ToString() == TEXT("mStoreVariables"))
+	else if (mAutoSimulateTick && *e.MemberProperty->GetFName().ToString() == TEXT("mStoreVariables"))
 	{
 		mResults.Empty();
 	}
-	if (e.MemberProperty->GetFName().ToString() == TEXT("bUseXMLExperimentSettings"))
+	else if (*e.MemberProperty->GetFName().ToString() == TEXT("bUseXMLExperimentSettings"))
 	{
 		if (bUseXMLExperimentSettings)
 		{
@@ -104,11 +104,11 @@ void AA_FMU::Tick(float DeltaTime)
 		{
 			if (mResults.Contains(Key))
 			{
-				mResults[Key] = mFmu->getReal(mModelVariables[FName(Key)].ValueReference);
+				mResults[Key] = mFmu->getReal(mModelVariables[FName(*Key)].ValueReference);
 			}
-			else if (mModelVariables.Contains(FName(Key)))
+			else if (mModelVariables.Contains(FName(*Key)))
 			{
-				mResults.Add(Key, mFmu->getReal(mModelVariables[FName(Key)].ValueReference));
+				mResults.Add(Key, mFmu->getReal(mModelVariables[FName(*Key)].ValueReference));
 			}
 		}
 	}
@@ -119,26 +119,25 @@ void AA_FMU::ExtractFMU()
 	if (mPath.FilePath.IsEmpty())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("mPath to .fmu is empty."));
-		return;
 	}
-	if (FPaths::GetExtension(*mPath.FilePath, false) != TEXT("fmu"))
+	else if (FPaths::GetExtension(*mPath.FilePath, false) != TEXT("fmu"))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Invalid mPath. It does not contain a `.fmu` extension."));
-		return;
 	}
-	if (!FPaths::FileExists(*mPath.FilePath))
+	else if (!FPaths::FileExists(*mPath.FilePath))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Invalid mPath. %s not found."), *mPath.FilePath);
-		return;
 	}
+	else{
 
     mPath.FilePath = FPaths::ConvertRelativePathToFull(mPath.FilePath);
 	std::string sPath = TCHAR_TO_UTF8(*mPath.FilePath);
 	size_t lastindex = sPath.find_last_of(".");
 	mUnzipDir = UTF8_TO_TCHAR(sPath.substr(0, lastindex).c_str());
-	unzip(sPath, TCHAR_TO_UTF8(*mUnzipDir));
+	elz::extractZip(sPath, std::string(TCHAR_TO_UTF8(*mUnzipDir)));
 
 	ParseXML();
+	}
 }
 
 void AA_FMU::ParseXML()
@@ -184,7 +183,7 @@ void AA_FMU::ParseXML()
 		struct FModelVariables ModelVariables;
 		ModelVariables.ValueReference = FCString::Atoi(*node->GetAttribute("valueReference"));
 		FString key = node->GetAttribute("name");
-		mModelVariables.Add(FName(key), ModelVariables);
+		mModelVariables.Add(FName(*key), ModelVariables);
 		// may need to add logic to handle non integer values if needeed in the future. Ignore them or assign them in some other way.
 	}
 
@@ -219,9 +218,9 @@ void AA_FMU::GetModelDescription()
 
 float AA_FMU::GetReal(FString Name)
 {
-	if (!mModelVariables.Contains(FName(Name)))
+	if (!mModelVariables.Contains(FName(*Name)))
 		return std::numeric_limits<float>::lowest();
-	return mFmu->getReal(mModelVariables[FName(Name)].ValueReference);
+	return mFmu->getReal(mModelVariables[FName(*Name)].ValueReference);
 }
 
 void AA_FMU::DoStep(float StepSize)
@@ -231,9 +230,9 @@ void AA_FMU::DoStep(float StepSize)
 
 void AA_FMU::SetReal(FString Name, float Value)
 {
-	if (!mModelVariables.Contains(FName(Name)))
+	if (!mModelVariables.Contains(FName(*Name)))
 		return;
-	mFmu->setReal(mModelVariables[FName(Name)].ValueReference, Value);
+	mFmu->setReal(mModelVariables[FName(*Name)].ValueReference, Value);
 }
 
 bool AA_FMU::ControlStep(float DeltaTime)

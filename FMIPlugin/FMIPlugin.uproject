@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "4.26",
+	"EngineAssociation": "4.24",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -13,10 +13,6 @@
 	"Plugins": [
 		{
 			"Name": "SunPosition",
-			"Enabled": true
-		},
-		{
-			"Name": "Volumetrics",
 			"Enabled": true
 		}
 	]
