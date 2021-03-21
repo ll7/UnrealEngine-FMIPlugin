@@ -17,7 +17,7 @@ This work was tested using the following. It may work on something else but no g
 FMU
 - The included example FMU, `test.fmu`, and is a [Lorenz System model](https://en.wikipedia.org/wiki/Lorenz_system).
   - The Modelica file is included in the `Modelica` folder.
-- This FMU is generated using Dymola 2021 with Binary Model Export License (i.e., license free FMU)
+- This FMU is generated using openmodelica 1.17.0 with modelica-4.0.0 with source code included, so a tool like [fmpy](https://github.com/CATIA-Systems/FMPy) can be used to easily recompile on other platforms.
 
 # Regarding `A_FMU`
 
