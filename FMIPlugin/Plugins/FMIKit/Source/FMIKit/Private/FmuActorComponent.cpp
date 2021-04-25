@@ -11,6 +11,7 @@ UFmuActorComponent::UFmuActorComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
+	bWantsInitializeComponent = true;
 	PrimaryComponentTick.bCanEverTick = true;
 	FmuPath.FilePath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() + "../PT2.fmu");
 	// ...
@@ -29,14 +30,18 @@ void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyC
     Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
+void UFmuActorComponent::InitializeComponent()	{
+	Super::InitializeComponent();
+	UE_LOG(LogTemp, Warning, TEXT("InitializeComponenent called"));
+	extractFmu();
+	importFmuParameters();
+}
+
 // Called when the game starts
 void UFmuActorComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Warning, TEXT("Initializing FMU component"));
-	extractFmu();
-	importFmuParameters();
 	for (auto& Elem : mValRefMap)
 {
     UE_LOG(LogTemp, Warning, TEXT("(%s, \"%d\")\n"), *Elem.Key, Elem.Value);
