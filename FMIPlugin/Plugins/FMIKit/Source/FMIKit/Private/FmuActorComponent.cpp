@@ -16,8 +16,17 @@ UFmuActorComponent::UFmuActorComponent()
 	// ...
 }
 
-void UFmuActorComponent::InitializeComponent()	{
-	Super::InitializeComponent();
+void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent)	{
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *(PropertyChangedEvent.MemberProperty->GetNameCPP()));
+	
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+    if (PropertyName == GET_MEMBER_NAME_CHECKED(UFmuActorComponent, FmuPath))
+     {
+		UE_LOG(LogTemp, Display, TEXT("FmuPath changed: %s"), *(PropertyChangedEvent.MemberProperty->GetNameCPP()));
+        extractFmu();
+		importFmuParameters();
+     }
+    Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
 // Called when the game starts
