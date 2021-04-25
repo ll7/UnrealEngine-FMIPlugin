@@ -153,3 +153,28 @@ float UFmuActorComponent::getReal(FString Name) {
 void UFmuActorComponent::setReal(FString Name, float Value) {
 	mFmu->setReal(mValRefMap[Name], Value);
 }
+
+bool UFmuActorComponent::getBoolean(FString Name) {
+    return mFmu->getBoolean(mValRefMap[Name]);
+}
+
+void UFmuActorComponent::setBoolean(FString Name, bool Value) {
+	mFmu->setBoolean(mValRefMap[Name], Value);
+}
+
+int UFmuActorComponent::getInteger(FString Name) {
+    return mFmu->getInteger(mValRefMap[Name]);
+}
+
+void UFmuActorComponent::setInteger(FString Name, int Value) {
+	mFmu->setInteger(mValRefMap[Name], Value);
+}
+
+FString UFmuActorComponent::getString(FString Name) {
+    return FString(mFmu->getString(mValRefMap[Name]).c_str());
+}
+
+void UFmuActorComponent::setString(FString Name, FString Value) {
+	mFmu->setString(mValRefMap[Name], std::string(TCHAR_TO_UTF8(*Value)));
+}
+

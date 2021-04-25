@@ -24,7 +24,21 @@ public:
 		float getReal(FString Name);
 	UFUNCTION(BlueprintCallable)
 		void setReal(FString Name, float Value);
+	
+	UFUNCTION(BlueprintCallable)
+		void setBoolean(FString Name, bool Value);
+	UFUNCTION(BlueprintCallable)
+		bool getBoolean(FString Name);
 
+	UFUNCTION(BlueprintCallable)
+		void setInteger(FString Name, int Value);
+	UFUNCTION(BlueprintCallable)
+		int getInteger(FString Name);
+
+	UFUNCTION(BlueprintCallable)
+		void setString(FString Name, FString Value);
+	UFUNCTION(BlueprintCallable)
+		FString getString(FString Name);
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

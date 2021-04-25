@@ -60,7 +60,7 @@ These examples use the `test.fmu` included in the repo.
 - Ship with Conan dependency prebuilts
 - Update documentation
 - Write test cases
-- Support more variable types
+- ~~Support more variable types~~
 - Support multiple FMU instances
 - Build better example projects
 - Better simulation parameter setup
