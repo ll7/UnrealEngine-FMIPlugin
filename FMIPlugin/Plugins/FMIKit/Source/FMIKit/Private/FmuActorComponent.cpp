@@ -44,7 +44,7 @@ void UFmuActorComponent::BeginPlay()
 
 	UE_LOG(LogTemp, Warning, TEXT("%s %s %s %s %s"), *FString(mGuid.c_str()), *FString(mModelIdentifier.c_str()), *mFmuWorkingPath, *FString(mInstanceName.c_str()), *(FPaths::DiffDir()));
 
-	mFmu = new fmikit::FMU2Slave(mGuid, mModelIdentifier, std::string(TCHAR_TO_UTF8(*mFmuWorkingPath)), mInstanceName);
+	mFmu = MakeShared<fmikit::FMU2Slave, ESPMode::ThreadSafe>(mGuid, mModelIdentifier, std::string(TCHAR_TO_UTF8(*mFmuWorkingPath)), mInstanceName);
 	mFmu->instantiate(false);
 	UE_LOG(LogTemp, Warning, TEXT("instantiate complete!"));
 
@@ -132,7 +132,7 @@ void UFmuActorComponent::EndPlay
 (
     const EEndPlayReason::Type EndPlayReason
 ) {
-	delete mFmu;
+	mFmu.Reset();
 	Super::EndPlay(EndPlayReason);
 }
 

@@ -66,7 +66,7 @@ private:
 	bool extractFmu();
 	void importFmuParameters();
 
-	fmikit::FMU2Slave *mFmu = nullptr;
+	TSharedPtr<fmikit::FMU2Slave, ESPMode::ThreadSafe> mFmu;
 
 	FString mFmuWorkingPath;
 
