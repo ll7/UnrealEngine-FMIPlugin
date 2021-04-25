@@ -28,7 +28,7 @@ In this current version, the `A_FMU` under `FMIKit C++ Classes/FMIKit/Public` co
   - `mResults` only returns values when `mAutoSimulateTick` = True. Else it is empty and variables can be retrieved using the `GetReal()` function.
 - `mModelVariables` are the names of all the variables found in the model.
 
-# Installation
+# Installation (Conan steps missing)
 
 Follow the following steps to get this project up and running on your own computer.
 
@@ -41,7 +41,7 @@ Follow the following steps to get this project up and running on your own comput
 - Press CTRL+P and select "Task: Run Build Task" and select "FMIKitEditor Linux Development Build"
 - When the build finished successfully open the FMIPlugin.uproject in UE4
 
-# Test Installation
+# Test Installation (Outdated)
 
 These examples use the `test.fmu` included in the repo.
 
@@ -54,3 +54,14 @@ These examples use the `test.fmu` included in the repo.
 # Known Issues
 
 - Currently only floats and booleans (i.e., 0/1) are supported variables in `A_FMU`.
+
+# Todo
+
+- Ship with Conan dependency prebuilts
+- Update documentation
+- Write test cases
+- Support more variable types
+- Support multiple FMU instances
+- Build better example projects
+- Better simulation parameter setup
+- Validate Windows support
