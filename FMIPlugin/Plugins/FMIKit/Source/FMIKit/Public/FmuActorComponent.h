@@ -6,7 +6,10 @@
 #include "FMU2.h"
 #include "Engine/EngineTypes.h"
 #include "CoreMinimal.h"
+#include "Misc/Paths.h"
 #include "Components/ActorComponent.h"
+#include "GenericPlatform/GenericPlatformFile.h" 
+#include "HAL/FileManagerGeneric.h" 
 #include "Kismet/GameplayStatics.h"
 #include "FmuActorComponent.generated.h"
 
@@ -64,13 +67,13 @@ public:
         TMap<FString, int> mValRefMap;
 
 private:
-
-	bool extractFmu();
+	static FString extractFmu(FString sourcePath);
+	static bool extract(FString *sourcePath, FString *targetPath);
 	void importFmuParameters();
 
 	TSharedPtr<fmikit::FMU2Slave, ESPMode::ThreadSafe> mFmu;
 
-	FString mFmuWorkingPath;
+	FString mFmuExtractPath;
 
 	std::string mFmuPath,  mGuid, mModelIdentifier, mInstanceName;
 	fmi2Real mStartTime;

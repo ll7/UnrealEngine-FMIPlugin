@@ -24,7 +24,8 @@ void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyC
     if (PropertyName == GET_MEMBER_NAME_CHECKED(UFmuActorComponent, FmuPath))
      {
 		UE_LOG(LogTemp, Display, TEXT("FmuPath changed: %s"), *(PropertyChangedEvent.MemberProperty->GetNameCPP()));
-        extractFmu();
+        mFmuExtractPath = extractFmu(FmuPath.FilePath);
+		UE_LOG(LogTemp, Display, TEXT("Extracted to: %s"), *mFmuExtractPath);
 		importFmuParameters();
      }
     Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -33,7 +34,7 @@ void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyC
 void UFmuActorComponent::InitializeComponent()	{
 	Super::InitializeComponent();
 	UE_LOG(LogTemp, Warning, TEXT("InitializeComponenent called"));
-	extractFmu();
+	mFmuExtractPath = extractFmu(FmuPath.FilePath);
 	importFmuParameters();
 }
 
@@ -47,9 +48,9 @@ void UFmuActorComponent::BeginPlay()
     UE_LOG(LogTemp, Warning, TEXT("(%s, \"%d\")\n"), *Elem.Key, Elem.Value);
 }
 
-	UE_LOG(LogTemp, Warning, TEXT("%s %s %s %s %s"), *FString(mGuid.c_str()), *FString(mModelIdentifier.c_str()), *mFmuWorkingPath, *FString(mInstanceName.c_str()), *(FPaths::DiffDir()));
+	UE_LOG(LogTemp, Warning, TEXT("%s %s %s %s %s"), *FString(mGuid.c_str()), *FString(mModelIdentifier.c_str()), *mFmuExtractPath, *FString(mInstanceName.c_str()), *(FPaths::DiffDir()));
 
-	mFmu = MakeShared<fmikit::FMU2Slave, ESPMode::ThreadSafe>(mGuid, mModelIdentifier, std::string(TCHAR_TO_UTF8(*mFmuWorkingPath)), mInstanceName);
+	mFmu = MakeShared<fmikit::FMU2Slave, ESPMode::ThreadSafe>(mGuid, mModelIdentifier, std::string(TCHAR_TO_UTF8(*mFmuExtractPath)), mInstanceName);
 	mFmu->instantiate(false);
 	UE_LOG(LogTemp, Warning, TEXT("instantiate complete!"));
 
@@ -65,50 +66,83 @@ void UFmuActorComponent::BeginPlay()
 	mLoaded = true;
 }
 
-bool UFmuActorComponent::extractFmu()	{
+FString UFmuActorComponent::extractFmu(FString sourcePath)	{
+	FString tempFmuPath = FPaths::ConvertRelativePathToFull(*sourcePath);
+	FString FmuParentPath = FPaths::GetPath(tempFmuPath);
+	IPlatformFile& PlatformFileManager = FPlatformFileManager::Get().GetPlatformFile();
 
-	if (FmuPath.FilePath.IsEmpty())
+	FDateTime modifiedDate = PlatformFileManager.GetTimeStamp(*tempFmuPath);
+
+	FString extractDir = FPaths::SetExtension(tempFmuPath, FString::Printf(TEXT("%lld"), modifiedDate.ToUnixTimestamp()));
+	
+	if (PlatformFileManager.DirectoryExists(*extractDir))	{
+		return extractDir;
+	}
+
+	TArray<FString> foundFolders;
+
+	FFileManagerGeneric FileMgr;
+	FString wildcard = FString::Printf(TEXT("%s.*"), *FPaths::GetBaseFilename(*tempFmuPath));
+ 	FString search_path(FPaths::Combine(FmuParentPath, *wildcard));
+	UE_LOG(LogTemp, Error, TEXT("SearchPath: %s"), *search_path);
+	FileMgr.FindFiles(foundFolders, *search_path, false, true);
+
+	for (FString folder : foundFolders)	{
+		FString folderPath = FmuParentPath;
+		folderPath.PathAppend(*folder, folder.Len());
+
+		UE_LOG(LogTemp, Warning, TEXT("FoundFolder: %s"), *folderPath);
+		PlatformFileManager.DeleteDirectoryRecursively(*folderPath);
+	}
+
+	extract(&tempFmuPath, &extractDir);
+	return extractDir;
+}
+
+bool UFmuActorComponent::extract(FString *sourcePath, FString *targetPath)	{
+
+	if (sourcePath->IsEmpty())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Path to FMU %s is empty."), *(FmuPath.FilePath));
+		UE_LOG(LogTemp, Error, TEXT("Path to FMU %s is empty."), sourcePath);
 		return false;
 	}
-	mFmuPath = std::string(TCHAR_TO_UTF8(*FPaths::ConvertRelativePathToFull(FmuPath.FilePath)));
-	mFmuWorkingPath = FPaths::GetBaseFilename(FPaths::ConvertRelativePathToFull(FmuPath.FilePath), false).Append("/");
+	auto tempFmuPath = FPaths::ConvertRelativePathToFull(*sourcePath);
+	auto tempTargetPath = FPaths::ConvertRelativePathToFull(*targetPath);
 
 	IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
-	//TODO: Check if .fmu file and extracted Dir are the same and skip extraction
-	FileManager.DeleteDirectoryRecursively(*mFmuWorkingPath);
-	FileManager.CreateDirectory(*mFmuWorkingPath);
 
-	UE_LOG(LogTemp, Display, TEXT("FMU Path: %s FMU Extraction Dir: %s Platform: %s"), UTF8_TO_TCHAR(mFmuPath.c_str()), *mFmuWorkingPath, *(UGameplayStatics::GetPlatformName()));
+	FileManager.DeleteDirectoryRecursively(*tempTargetPath);
+	FileManager.CreateDirectory(*tempTargetPath);
+
+	UE_LOG(LogTemp, Display, TEXT("FMU Path: %s FMU Extraction Dir: %s Platform: %s"), *tempFmuPath, *tempTargetPath, *(UGameplayStatics::GetPlatformName()));
 	
 	if ( UGameplayStatics::GetPlatformName() == "LINUX")	{
-		FString unzipCommandArgs = FString::Printf(TEXT("-uo %s -d %s"), *FString(mFmuPath.c_str()), *mFmuWorkingPath);
+		FString unzipCommandArgs = FString::Printf(TEXT("-uo %s -d %s"), *tempFmuPath, *tempTargetPath);
 		UE_LOG(LogTemp, Warning, TEXT("Extraction command: %s"), *unzipCommandArgs);
-		int32* OutReturnCode = new int32;
-		FString* OutStdOut = new FString;
-		FString* OutStdErr = new FString;
+
 		FUnixPlatformProcess::ExecProcess(TEXT("/usr/bin/unzip"), *unzipCommandArgs, 0, 0, 0);
-		UE_LOG(LogTemp, Warning, TEXT("Extraction command: %s"), OutStdOut, OutStdErr, OutReturnCode);
-		delete OutReturnCode;
-		delete OutStdOut;
-		delete OutStdErr;
+
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("Platform is not LINUX, using elzip to extract FMU"));
-		elz::extractZip(mFmuPath, std::string(TCHAR_TO_UTF8(*mFmuWorkingPath)));
+		elz::extractZip(std::string(TCHAR_TO_UTF8(*tempFmuPath)), std::string(TCHAR_TO_UTF8(*tempTargetPath)));
 	}
-	
 	
 	return true;
 }
 
 void UFmuActorComponent::importFmuParameters()	{
 
-		FString fXmlFile = mFmuWorkingPath;
-		fXmlFile.Append(TEXT("modelDescription.xml"));
+		FString fXmlFile = mFmuExtractPath;
+		fXmlFile = FPaths::Combine(mFmuExtractPath, TEXT("modelDescription.xml"));
+
+		IPlatformFile &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 		UE_LOG(LogTemp, Display, TEXT("FMU modelDescription.xml Path: %s"), *fXmlFile);
+		if (!FileManager.FileExists(*fXmlFile))	{
+			UE_LOG(LogTemp, Error, TEXT("No modelDesctription.xml found"));
+			return;
+		}
 		
 		FXmlFile model(fXmlFile, EConstructMethod::ConstructFromFile);
 		FXmlNode *root = model.GetRootNode();
