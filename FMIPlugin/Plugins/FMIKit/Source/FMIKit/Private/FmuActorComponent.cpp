@@ -43,7 +43,7 @@ void UFmuActorComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	for (auto& Elem : mValRefMap)
+	for (auto& Elem : FmuVariables)
 {
     UE_LOG(LogTemp, Warning, TEXT("(%s, \"%d\")\n"), *Elem.Key, Elem.Value);
 }
@@ -154,7 +154,7 @@ void UFmuActorComponent::importFmuParameters()	{
 			FString key = node->GetAttribute("name");
 			int value = FCString::Atoi(*node->GetAttribute("valueReference"));
 			UE_LOG(LogTemp, Display, TEXT("Found Model Var: %s : %d"), *key, value);
-			mValRefMap.Add(key, value);
+			FmuVariables.Add(key, value);
 		}
 		mGuid = TCHAR_TO_UTF8(*root->GetAttribute("guid"));
 		mModelIdentifier = TCHAR_TO_UTF8(*root->GetAttribute("modelName"));;
@@ -195,34 +195,34 @@ void UFmuActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 }
 
 float UFmuActorComponent::getReal(FString Name) {
-    return mFmu->getReal(mValRefMap[Name]);
+    return mFmu->getReal(FmuVariables[Name]);
 }
 
 void UFmuActorComponent::setReal(FString Name, float Value) {
-	mFmu->setReal(mValRefMap[Name], Value);
+	mFmu->setReal(FmuVariables[Name], Value);
 }
 
 bool UFmuActorComponent::getBoolean(FString Name) {
-    return mFmu->getBoolean(mValRefMap[Name]);
+    return mFmu->getBoolean(FmuVariables[Name]);
 }
 
 void UFmuActorComponent::setBoolean(FString Name, bool Value) {
-	mFmu->setBoolean(mValRefMap[Name], Value);
+	mFmu->setBoolean(FmuVariables[Name], Value);
 }
 
 int UFmuActorComponent::getInteger(FString Name) {
-    return mFmu->getInteger(mValRefMap[Name]);
+    return mFmu->getInteger(FmuVariables[Name]);
 }
 
 void UFmuActorComponent::setInteger(FString Name, int Value) {
-	mFmu->setInteger(mValRefMap[Name], Value);
+	mFmu->setInteger(FmuVariables[Name], Value);
 }
 
 FString UFmuActorComponent::getString(FString Name) {
-    return FString(mFmu->getString(mValRefMap[Name]).c_str());
+    return FString(mFmu->getString(FmuVariables[Name]).c_str());
 }
 
 void UFmuActorComponent::setString(FString Name, FString Value) {
-	mFmu->setString(mValRefMap[Name], std::string(TCHAR_TO_UTF8(*Value)));
+	mFmu->setString(FmuVariables[Name], std::string(TCHAR_TO_UTF8(*Value)));
 }
 

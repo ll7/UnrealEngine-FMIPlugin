@@ -54,7 +54,6 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 		float SpeedMultiplier = 1.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
@@ -64,7 +63,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
         FFilePath FmuPath;
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MapsAndSets")
-        TMap<FString, int> mValRefMap;
+        TMap<FString, int> FmuVariables;
 
 private:
 	static FString extractFmu(FString sourcePath);
