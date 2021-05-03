@@ -47,6 +47,8 @@ void UFmuActorComponent::BeginPlay()
 {
     UE_LOG(LogTemp, Warning, TEXT("(%s, \"%d\")\n"), *Elem.Key, Elem.Value);
 }
+	if (overrideTolerance)
+		mTolerance = simulationTolerance;
 
 	UE_LOG(LogTemp, Warning, TEXT("%s %s %s %s %s"), *FString(mGuid.c_str()), *FString(mModelIdentifier.c_str()), *mFmuExtractPath, *FString(mInstanceName.c_str()), *(FPaths::DiffDir()));
 
@@ -54,7 +56,7 @@ void UFmuActorComponent::BeginPlay()
 	mFmu->instantiate(false);
 	UE_LOG(LogTemp, Warning, TEXT("instantiate complete!"));
 
-	mFmu->setupExperiment(true, mTolerance, mStartTime, true, mStopTime);
+	mFmu->setupExperiment(true, mTolerance, mStartTime, finiteSimulation, mStopTime);
 	UE_LOG(LogTemp, Warning, TEXT("setupExperiment complete!"));
 
 	mFmu->enterInitializationMode();
@@ -161,7 +163,6 @@ void UFmuActorComponent::importFmuParameters()	{
 		mInstanceName = "instance";
 		mStartTime = FCString::Atof(*defaultExperiment->GetAttribute("startTime"));
 		mStopTime = FCString::Atof(*defaultExperiment->GetAttribute("stopTime")) * StopTimeMultiplier;
-		mStepSize = 0.1;
 		mTolerance = FCString::Atof(*defaultExperiment->GetAttribute("tolerance"));;
 		mTimeLastTick = mStartTime;
 		mTimeNow = mStartTime;
@@ -184,15 +185,16 @@ void UFmuActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 		return;
 	
 	mTimeNow += DeltaTime;
-	if (finiteSimulation && mTimeLastTick >= mStopTime / SpeedMultiplier)
+	if (finiteSimulation && mTimeLastTick >= mStopTime)
 		return;
 
 	if (staticTicking)	{
-		if (!(mTimeNow > mTimeLastTick + mStepSize / SpeedMultiplier))
+		if (!(mTimeNow > mTimeLastTick + stepSize))
 			return;
-		mTimeLastTick += mStepSize / SpeedMultiplier;
-		mFmu->doStep(mStepSize);
+		mTimeLastTick += stepSize;
+		mFmu->doStep(stepSize);
 	} else {
+		mTimeLastTick += DeltaTime;
 		mFmu->doStep(DeltaTime);
 	}
 }
