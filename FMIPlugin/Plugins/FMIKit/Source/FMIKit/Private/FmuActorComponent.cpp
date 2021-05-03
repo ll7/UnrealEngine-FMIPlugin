@@ -163,7 +163,7 @@ void UFmuActorComponent::importFmuParameters()	{
 		mStopTime = FCString::Atof(*defaultExperiment->GetAttribute("stopTime")) * StopTimeMultiplier;
 		mStepSize = 0.1;
 		mTolerance = FCString::Atof(*defaultExperiment->GetAttribute("tolerance"));;
-		mTimeLast = mStartTime;
+		mTimeLastTick = mStartTime;
 		mTimeNow = mStartTime;
 }
 
@@ -182,16 +182,19 @@ void UFmuActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (!mLoaded)
 		return;
-
+	
 	mTimeNow += DeltaTime;
-	if (!(mTimeNow > mTimeLast + mStepSize / SpeedMultiplier))
+	if (finiteSimulation && mTimeLastTick >= mStopTime / SpeedMultiplier)
 		return;
 
-	if (mTimeLast >= mStopTime / SpeedMultiplier)
-		return;
-
-    mTimeLast += mStepSize / SpeedMultiplier;
-	mFmu->doStep(mStepSize);
+	if (staticTicking)	{
+		if (!(mTimeNow > mTimeLastTick + mStepSize / SpeedMultiplier))
+			return;
+		mTimeLastTick += mStepSize / SpeedMultiplier;
+		mFmu->doStep(mStepSize);
+	} else {
+		mFmu->doStep(DeltaTime);
+	}
 }
 
 float UFmuActorComponent::getReal(FString Name) {

@@ -53,16 +53,19 @@ protected:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+		bool staticTicking = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (EditCondition = staticTicking))
+		float stepSize = 0.1f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 		float SpeedMultiplier = 1.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
-		FVector DistanceMultiplier = {1.f,1.f,1.f};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+		bool finiteSimulation = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (EditCondition = finiteSimulation))
 		float StopTimeMultiplier = 1.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
         FFilePath FmuPath;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MapsAndSets")
+    UPROPERTY(VisibleAnywhere, Category = "MapsAndSets", DisplayName = "FMU Variables")
         TMap<FString, int> FmuVariables;
 
 private:
@@ -79,7 +82,7 @@ private:
 	fmi2Real mStopTime;
 	fmi2Real mStepSize;
 	fmi2Real mTolerance;
-	fmi2Real mTimeLast;
+	fmi2Real mTimeLastTick;
 	fmi2Real mTimeNow;
 	bool mLoaded = false;
 };
