@@ -204,30 +204,41 @@ float UFmuActorComponent::getReal(FString Name) {
 }
 
 void UFmuActorComponent::setReal(FString Name, float Value) {
+	if (isVariablePresent(Name))
 	mFmu->setReal(FmuVariables[Name], Value);
 }
 
 bool UFmuActorComponent::getBoolean(FString Name) {
-    return mFmu->getBoolean(FmuVariables[Name]);
+    return isVariablePresent(Name) ? mFmu->getBoolean(FmuVariables[Name]) : false;
 }
 
 void UFmuActorComponent::setBoolean(FString Name, bool Value) {
+	if (isVariablePresent(Name))
 	mFmu->setBoolean(FmuVariables[Name], Value);
 }
 
 int UFmuActorComponent::getInteger(FString Name) {
-    return mFmu->getInteger(FmuVariables[Name]);
+    return isVariablePresent(Name) ? mFmu->getInteger(FmuVariables[Name]) : -1;
 }
 
 void UFmuActorComponent::setInteger(FString Name, int Value) {
+	if (isVariablePresent(Name))
 	mFmu->setInteger(FmuVariables[Name], Value);
 }
 
 FString UFmuActorComponent::getString(FString Name) {
-    return FString(mFmu->getString(FmuVariables[Name]).c_str());
+    return isVariablePresent(Name) ? FString(mFmu->getString(FmuVariables[Name]).c_str()) : FString("Invalid String Name");
 }
 
 void UFmuActorComponent::setString(FString Name, FString Value) {
+	if (isVariablePresent(Name))
 	mFmu->setString(FmuVariables[Name], std::string(TCHAR_TO_UTF8(*Value)));
 }
 
+bool UFmuActorComponent::isVariablePresent(FString Name)	{
+	if (!FmuVariables.Contains(Name))	{
+		UE_LOG(FMURuntime, Error, TEXT("No variable with name %s found in FMU: %s"), *Name, *FmuPath.FilePath);
+		return false;
+	}
+	return true;
+}

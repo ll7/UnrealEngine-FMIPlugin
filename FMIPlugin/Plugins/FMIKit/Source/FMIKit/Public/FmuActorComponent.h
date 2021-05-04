@@ -78,6 +78,7 @@ private:
 	static FString extractFmu(FString sourcePath);
 	static bool extract(FString *sourcePath, FString *targetPath);
 	void importFmuParameters();
+	bool isVariablePresent(FString Name);
 
 	TSharedPtr<fmikit::FMU2Slave, ESPMode::ThreadSafe> mFmu;
 
