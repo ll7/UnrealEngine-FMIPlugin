@@ -5,6 +5,8 @@
 #include "XmlFile.h"
 #include "elzip.hpp"
 
+DEFINE_LOG_CATEGORY(FMUSetup);
+DEFINE_LOG_CATEGORY(FMURuntime);
 
 // Sets default values for this component's properties
 UFmuActorComponent::UFmuActorComponent()
@@ -18,14 +20,13 @@ UFmuActorComponent::UFmuActorComponent()
 }
 
 void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent)	{
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *(PropertyChangedEvent.MemberProperty->GetNameCPP()));
 	
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
     if (PropertyName == GET_MEMBER_NAME_CHECKED(UFmuActorComponent, FmuPath))
      {
-		UE_LOG(LogTemp, Display, TEXT("FmuPath changed: %s"), *(PropertyChangedEvent.MemberProperty->GetNameCPP()));
+		UE_LOG(FMUSetup, Display, TEXT("FmuPath changed: %s"), *(PropertyChangedEvent.MemberProperty->GetNameCPP()));
         mFmuExtractPath = extractFmu(FmuPath.FilePath);
-		UE_LOG(LogTemp, Display, TEXT("Extracted to: %s"), *mFmuExtractPath);
+		UE_LOG(FMUSetup, Display, TEXT("Extracted to: %s"), *mFmuExtractPath);
 		importFmuParameters();
      }
     Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -33,7 +34,7 @@ void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyC
 
 void UFmuActorComponent::InitializeComponent()	{
 	Super::InitializeComponent();
-	UE_LOG(LogTemp, Warning, TEXT("InitializeComponenent called"));
+	UE_LOG(FMURuntime, Log, TEXT("InitializeComponenent called for FMU %s"), *FmuPath.FilePath);
 	mFmuExtractPath = extractFmu(FmuPath.FilePath);
 	importFmuParameters();
 }
@@ -45,25 +46,25 @@ void UFmuActorComponent::BeginPlay()
 
 	for (auto& Elem : FmuVariables)
 {
-    UE_LOG(LogTemp, Warning, TEXT("(%s, \"%d\")\n"), *Elem.Key, Elem.Value);
+    UE_LOG(FMURuntime, Verbose, TEXT("(%s, \"%d\")\n"), *Elem.Key, Elem.Value);
 }
 	if (overrideTolerance)
 		mTolerance = simulationTolerance;
 
-	UE_LOG(LogTemp, Warning, TEXT("%s %s %s %s %s"), *FString(mGuid.c_str()), *FString(mModelIdentifier.c_str()), *mFmuExtractPath, *FString(mInstanceName.c_str()), *(FPaths::DiffDir()));
+	UE_LOG(FMURuntime, Warning, TEXT("FMU Initialization parameters, %s %s %s %s"), *FString(mGuid.c_str()), *FString(mModelIdentifier.c_str()), *mFmuExtractPath, *FString(mInstanceName.c_str()));
 
 	mFmu = MakeShared<fmikit::FMU2Slave, ESPMode::ThreadSafe>(mGuid, mModelIdentifier, std::string(TCHAR_TO_UTF8(*mFmuExtractPath)), mInstanceName);
 	mFmu->instantiate(false);
-	UE_LOG(LogTemp, Warning, TEXT("instantiate complete!"));
+	UE_LOG(FMURuntime, Verbose, TEXT("instantiate complete!"));
 
 	mFmu->setupExperiment(true, mTolerance, mStartTime, finiteSimulation, mStopTime);
-	UE_LOG(LogTemp, Warning, TEXT("setupExperiment complete!"));
+	UE_LOG(FMURuntime, Verbose, TEXT("setupExperiment complete!"));
 
 	mFmu->enterInitializationMode();
-	UE_LOG(LogTemp, Warning, TEXT("enterInitializationMode complete!"));
+	UE_LOG(FMURuntime, Verbose, TEXT("enterInitializationMode complete!"));
 
 	mFmu->exitInitializationMode();
-	UE_LOG(LogTemp, Warning, TEXT("exitInitializationMode complete!"));
+	UE_LOG(FMURuntime, Verbose, TEXT("exitInitializationMode complete!"));
 	
 	mLoaded = true;
 }
@@ -86,14 +87,14 @@ FString UFmuActorComponent::extractFmu(FString sourcePath)	{
 	FFileManagerGeneric FileMgr;
 	FString wildcard = FString::Printf(TEXT("%s.*"), *FPaths::GetBaseFilename(*tempFmuPath));
  	FString search_path(FPaths::Combine(FmuParentPath, *wildcard));
-	UE_LOG(LogTemp, Error, TEXT("SearchPath: %s"), *search_path);
+	UE_LOG(FMUSetup, Verbose, TEXT("Old FMU cleanup Search Path: %s"), *search_path);
 	FileMgr.FindFiles(foundFolders, *search_path, false, true);
 
 	for (FString folder : foundFolders)	{
 		FString folderPath = FmuParentPath;
 		folderPath.PathAppend(*folder, folder.Len());
 
-		UE_LOG(LogTemp, Warning, TEXT("FoundFolder: %s"), *folderPath);
+		UE_LOG(FMUSetup, Warning, TEXT("FMU Cleanup FoundFolder: %s"), *folderPath);
 		PlatformFileManager.DeleteDirectoryRecursively(*folderPath);
 	}
 
@@ -105,7 +106,7 @@ bool UFmuActorComponent::extract(FString *sourcePath, FString *targetPath)	{
 
 	if (sourcePath->IsEmpty())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Path to FMU %s is empty."), sourcePath);
+		UE_LOG(FMUSetup, Error, TEXT("Path to FMU %s is empty."), sourcePath);
 		return false;
 	}
 	auto tempFmuPath = FPaths::ConvertRelativePathToFull(*sourcePath);
@@ -116,17 +117,17 @@ bool UFmuActorComponent::extract(FString *sourcePath, FString *targetPath)	{
 	FileManager.DeleteDirectoryRecursively(*tempTargetPath);
 	FileManager.CreateDirectory(*tempTargetPath);
 
-	UE_LOG(LogTemp, Display, TEXT("FMU Path: %s FMU Extraction Dir: %s Platform: %s"), *tempFmuPath, *tempTargetPath, *(UGameplayStatics::GetPlatformName()));
+	UE_LOG(FMUSetup, Display, TEXT("FMU Path: %s FMU Extraction Dir: %s Platform: %s"), *tempFmuPath, *tempTargetPath, *(UGameplayStatics::GetPlatformName()));
 	
 	if ( UGameplayStatics::GetPlatformName() == "LINUX")	{
 		FString unzipCommandArgs = FString::Printf(TEXT("-uo %s -d %s"), *tempFmuPath, *tempTargetPath);
-		UE_LOG(LogTemp, Warning, TEXT("Extraction command: %s"), *unzipCommandArgs);
+		UE_LOG(FMUSetup, Display, TEXT("Extraction command: %s"), *unzipCommandArgs);
 
 		FUnixPlatformProcess::ExecProcess(TEXT("/usr/bin/unzip"), *unzipCommandArgs, 0, 0, 0);
 
 	}
 	else {
-		UE_LOG(LogTemp, Warning, TEXT("Platform is not LINUX, using elzip to extract FMU"));
+		UE_LOG(FMUSetup, Warning, TEXT("Platform is not LINUX, using elzip to extract FMU"));
 		elz::extractZip(std::string(TCHAR_TO_UTF8(*tempFmuPath)), std::string(TCHAR_TO_UTF8(*tempTargetPath)));
 	}
 	
@@ -140,9 +141,8 @@ void UFmuActorComponent::importFmuParameters()	{
 
 		IPlatformFile &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
-		UE_LOG(LogTemp, Display, TEXT("FMU modelDescription.xml Path: %s"), *fXmlFile);
 		if (!FileManager.FileExists(*fXmlFile))	{
-			UE_LOG(LogTemp, Error, TEXT("No modelDesctription.xml found"));
+			UE_LOG(FMUSetup, Error, TEXT("No modelDesctription.xml found at %s"), *fXmlFile);
 			return;
 		}
 		
@@ -155,7 +155,7 @@ void UFmuActorComponent::importFmuParameters()	{
 		{
 			FString key = node->GetAttribute("name");
 			int value = FCString::Atoi(*node->GetAttribute("valueReference"));
-			UE_LOG(LogTemp, Display, TEXT("Found Model Var: %s : %d"), *key, value);
+			UE_LOG(FMUSetup, Display, TEXT("Found Model Var: %s : %d"), *key, value);
 			FmuVariables.Add(key, value);
 		}
 		mGuid = TCHAR_TO_UTF8(*root->GetAttribute("guid"));
@@ -200,12 +200,12 @@ void UFmuActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 }
 
 float UFmuActorComponent::getReal(FString Name) {
-    return mFmu->getReal(FmuVariables[Name]);
+    return isVariablePresent(Name) ? mFmu->getReal(FmuVariables[Name]) : NAN;
 }
 
 void UFmuActorComponent::setReal(FString Name, float Value) {
 	if (isVariablePresent(Name))
-	mFmu->setReal(FmuVariables[Name], Value);
+		mFmu->setReal(FmuVariables[Name], Value);
 }
 
 bool UFmuActorComponent::getBoolean(FString Name) {
@@ -214,7 +214,7 @@ bool UFmuActorComponent::getBoolean(FString Name) {
 
 void UFmuActorComponent::setBoolean(FString Name, bool Value) {
 	if (isVariablePresent(Name))
-	mFmu->setBoolean(FmuVariables[Name], Value);
+		mFmu->setBoolean(FmuVariables[Name], Value);
 }
 
 int UFmuActorComponent::getInteger(FString Name) {
@@ -223,7 +223,7 @@ int UFmuActorComponent::getInteger(FString Name) {
 
 void UFmuActorComponent::setInteger(FString Name, int Value) {
 	if (isVariablePresent(Name))
-	mFmu->setInteger(FmuVariables[Name], Value);
+		mFmu->setInteger(FmuVariables[Name], Value);
 }
 
 FString UFmuActorComponent::getString(FString Name) {
@@ -232,7 +232,7 @@ FString UFmuActorComponent::getString(FString Name) {
 
 void UFmuActorComponent::setString(FString Name, FString Value) {
 	if (isVariablePresent(Name))
-	mFmu->setString(FmuVariables[Name], std::string(TCHAR_TO_UTF8(*Value)));
+		mFmu->setString(FmuVariables[Name], std::string(TCHAR_TO_UTF8(*Value)));
 }
 
 bool UFmuActorComponent::isVariablePresent(FString Name)	{

@@ -2,6 +2,9 @@
 
 #pragma once
 
+DECLARE_LOG_CATEGORY_EXTERN(FMUSetup, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(FMURuntime, Warning, All);
+
 #include "Containers/Map.h"
 #include "FMU2.h"
 #include "Engine/EngineTypes.h"
