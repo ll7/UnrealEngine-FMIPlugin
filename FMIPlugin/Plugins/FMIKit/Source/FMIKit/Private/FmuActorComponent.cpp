@@ -34,7 +34,7 @@ void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyC
 
 void UFmuActorComponent::InitializeComponent()	{
 	Super::InitializeComponent();
-	UE_LOG(FMURuntime, Log, TEXT("InitializeComponenent called for FMU %s"), *FmuPath.FilePath);
+	UE_LOG(FMUSetup, Log, TEXT("InitializeComponenent called for FMU %s"), *FmuPath.FilePath);
 	mFmuExtractPath = extractFmu(FmuPath.FilePath);
 	importFmuParameters();
 }
@@ -46,26 +46,25 @@ void UFmuActorComponent::BeginPlay()
 
 	for (auto& Elem : FmuVariables)
 {
-    UE_LOG(FMURuntime, Verbose, TEXT("(%s, \"%d\")\n"), *Elem.Key, Elem.Value);
+    UE_LOG(FMUSetup, Verbose, TEXT("(%s, \"%d\")\n"), *Elem.Key, Elem.Value);
 }
 	if (overrideTolerance)
 		mTolerance = simulationTolerance;
 
-	UE_LOG(FMURuntime, Warning, TEXT("FMU Initialization parameters, %s %s %s %s"), *FString(mGuid.c_str()), *FString(mModelIdentifier.c_str()), *mFmuExtractPath, *FString(mInstanceName.c_str()));
+	UE_LOG(FMUSetup, Verbose, TEXT("FMU Initialization parameters, %s %s %s %s"), *FString(mGuid.c_str()), *FString(mModelIdentifier.c_str()), *mFmuExtractPath, *FString(mInstanceName.c_str()));
 
 	mFmu = MakeShared<fmikit::FMU2Slave, ESPMode::ThreadSafe>(mGuid, mModelIdentifier, std::string(TCHAR_TO_UTF8(*mFmuExtractPath)), mInstanceName);
 	mFmu->instantiate(false);
-	UE_LOG(FMURuntime, Verbose, TEXT("instantiate complete!"));
+	UE_LOG(FMUSetup, Verbose, TEXT("instantiate complete!"));
 
 	mFmu->setupExperiment(true, mTolerance, mStartTime, finiteSimulation, mStopTime);
-	UE_LOG(FMURuntime, Verbose, TEXT("setupExperiment complete!"));
+	UE_LOG(FMUSetup, Verbose, TEXT("setupExperiment complete!"));
 
 	mFmu->enterInitializationMode();
-	UE_LOG(FMURuntime, Verbose, TEXT("enterInitializationMode complete!"));
+	UE_LOG(FMUSetup, Verbose, TEXT("enterInitializationMode complete!"));
 
 	mFmu->exitInitializationMode();
-	UE_LOG(FMURuntime, Verbose, TEXT("exitInitializationMode complete!"));
-	
+	UE_LOG(FMUSetup, Verbose, TEXT("exitInitializationMode complete!"));
 	mLoaded = true;
 }
 
