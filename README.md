@@ -1,39 +1,37 @@
-# WIP: Cross-Platform UnrealEngine-FMIPlugin
+# WIP: FMI-UE4: Execute Co-Simulation FMUs in UE4
 
-![FMUinUE4](docs/fmuUEBP.PNG)
+- Cross-Platform (At least Win64 (Untested) and Linux64)
+- Simulate Co-Simulation FMUs within the Unreal Engine environment.
 
-- Cross-Platform (At least Win64 and Linux64)
-- A MVP (minimally viable product) of simulating FMUs within the Unreal Engine environment.
 - This MVP relies on the [FMIKit repositorty](https://github.com/CATIA-Systems/FMIKit-Simulink) (non-simulink portion)
 - Special thanks to Torsten Sommer for his work on FMIKit!
-- [Short Demo video](https://youtu.be/r3NeJKJt4Z8)
-  
+- Architecture based on: [ORNL-Modelica/UnrealEngine-FMIPlugin](https://github.com/ORNL-Modelica/UnrealEngine-FMIPlugin)
+
 # Prerequistes
 
 This work was tested using the following. It may work on something else but no gurantees.
+
 - Arch Linux rolling (should not matter, since UE4 ships its own toolchain on linux)
 - Unreal Engine 4.24 source build
 - [Conan UE4 Cli](https://github.com/adamrehn/conan-ue4cli) and l0wl3vels fork of [ue4-conan-recipes](https://github.com/l0wl3vel/ue4-conan-recipes)
 - IDE: VS Code
 
-FMU
-- The included example FMU, `test.fmu`, and is a [Lorenz System model](https://en.wikipedia.org/wiki/Lorenz_system).
-  - The Modelica file is included in the `Modelica` folder.
-- This FMU is generated using openmodelica 1.17.0 with modelica-4.0.0 with source code included, so a tool like [fmpy](https://github.com/CATIA-Systems/FMPy) can be used to easily recompile on other platforms.
+Included FMUs
 
-# Regarding `A_FMU`
+- PT2.fmu
+- Radaufhaengung.fmu: Wheel suspension with one point fixed (Did not get this to work)
+- RadaufhaengungNeu.fmu: New different implementation of a wheel suspension
+- The Modelica files are included in the `Modelica` folder.
+- FMUs are generated using openmodelica 1.17.0 with modelica-4.0.0 with source code included, so a tool like [fmpy](https://github.com/CATIA-Systems/FMPy) can be used to easily recompile on other platforms.
 
-In this current version, the `A_FMU` under `FMIKit C++ Classes/FMIKit/Public` contains the magic to make the FMU run. Users are highly encouraged to look at `A_FMU.cpp` if they need to understand more intimately the implementation.
-- `mResults` returns the results requested by the user `mStoredVariables`.
-  - `mResults` only returns values when `mAutoSimulateTick` = True. Else it is empty and variables can be retrieved using the `GetReal()` function.
-- `mModelVariables` are the names of all the variables found in the model.
+# Installation
 
-# Installation (Conan steps missing)
+This repo contains the pre-compiled dependencies for UE4.24. For any other version you need to clone and build the dependencies libzip and elzip from [my ue4-conan-recipes fork](https://github.com/l0wl3vel/ue4-conan-recipes)
 
 Follow the following steps to get this project up and running on your own computer.
 
 - Download and unzip the folder into your desired location **OR** clone the repository.
-- Generate VSCode project files : 
+- Generate VSCode project files :
 
   pathtoUE/GenerateProjectFiles.sh -projectfiles -project='pathto/UnrealEngine-FMIPlugin/FMIPlugin/FMIPlugin.uproject' -game -rocket -progress -VSCode
 
@@ -41,27 +39,15 @@ Follow the following steps to get this project up and running on your own comput
 - Press CTRL+P and select "Task: Run Build Task" and select "FMIKitEditor Linux Development Build"
 - When the build finished successfully open the FMIPlugin.uproject in UE4
 
-# Test Installation (Outdated)
-
-These examples use the `test.fmu` included in the repo.
-
-- `Level_0`
-  - This level provides example blueprints (`BP_FMU`) demonstrating the automatic and manual options for simulating an FMU.
-  - `BP_FMU` implements the `A_FMU` class
-- `Level_1`
-  - Simple use of  `A_FMU` and printing a variable to the screen via the level blueprint.
-
-# Known Issues
-
-- Currently only floats and booleans (i.e., 0/1) are supported variables in `A_FMU`.
-
 # Todo
 
-- Ship with Conan dependency prebuilts
+- ~~Ship with Conan dependency prebuilts~~
+- Standalone Play does not work currently
+- Implement distinctions for causality and variability for FMI variables
 - Update documentation
 - Write test cases
 - ~~Support more variable types~~
-- Support multiple FMU instances
+- ~~Support multiple FMU instances~~
 - Build better example projects
-- Better simulation parameter setup
+- ~~Better simulation parameter setup~~
 - Validate Windows support

@@ -19,35 +19,43 @@ UFmuActorComponent::UFmuActorComponent()
 	// ...
 }
 
-void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent)	{
-	
+/*
+Checks if the fmuPath was changed and extracts the FMU and imports the parameters.
+TODO: model variables do not show up in the blueprint user interface.
+*/
+void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent)
+{
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
-    if (PropertyName == GET_MEMBER_NAME_CHECKED(UFmuActorComponent, FmuPath))
-     {
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(UFmuActorComponent, FmuPath))
+	{
 		UE_LOG(FMUSetup, Display, TEXT("FmuPath changed: %s"), *(PropertyChangedEvent.MemberProperty->GetNameCPP()));
-        mFmuExtractPath = extractFmu(FmuPath.FilePath);
+		mFmuExtractPath = extractFmu(FmuPath.FilePath);
 		UE_LOG(FMUSetup, Display, TEXT("Extracted to: %s"), *mFmuExtractPath);
 		importFmuParameters();
-     }
-    Super::PostEditChangeProperty(PropertyChangedEvent);
+	}
+	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
-void UFmuActorComponent::InitializeComponent()	{
+void UFmuActorComponent::InitializeComponent()
+{
 	Super::InitializeComponent();
 	UE_LOG(FMUSetup, Log, TEXT("InitializeComponenent called for FMU %s"), *FmuPath.FilePath);
 	mFmuExtractPath = extractFmu(FmuPath.FilePath);
 	importFmuParameters();
 }
 
-// Called when the game starts
+/*
+Initializes the FMU.
+TODO: Error checking and handling. The FMU initialization functions do not indicate failure.
+*/
 void UFmuActorComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	for (auto& Elem : FmuVariables)
-{
-    UE_LOG(FMUSetup, Verbose, TEXT("(%s, \"%d\")\n"), *Elem.Key, Elem.Value);
-}
+	for (auto &Elem : FmuVariables)
+	{
+		UE_LOG(FMUSetup, Verbose, TEXT("(%s, \"%d\")\n"), *Elem.Key, Elem.Value);
+	}
 	if (overrideTolerance)
 		mTolerance = simulationTolerance;
 
@@ -65,19 +73,27 @@ void UFmuActorComponent::BeginPlay()
 
 	mFmu->exitInitializationMode();
 	UE_LOG(FMUSetup, Verbose, TEXT("exitInitializationMode complete!"));
+
 	mLoaded = true;
 }
 
-FString UFmuActorComponent::extractFmu(FString sourcePath)	{
-	FString tempFmuPath = FPaths::ConvertRelativePathToFull(*sourcePath);
+/* 
+Extracts the FMU at fmuPath to a folder in the same directory.
+The Path is {FMUname}.{Changed Unix Timestamp} to prevent stuttering on extraction.
+Returns the extraction path.
+*/
+FString UFmuActorComponent::extractFmu(FString fmuPath)
+{
+	FString tempFmuPath = FPaths::ConvertRelativePathToFull(*fmuPath);
 	FString FmuParentPath = FPaths::GetPath(tempFmuPath);
-	IPlatformFile& PlatformFileManager = FPlatformFileManager::Get().GetPlatformFile();
+	IPlatformFile &PlatformFileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 	FDateTime modifiedDate = PlatformFileManager.GetTimeStamp(*tempFmuPath);
 
 	FString extractDir = FPaths::SetExtension(tempFmuPath, FString::Printf(TEXT("%lld"), modifiedDate.ToUnixTimestamp()));
-	
-	if (PlatformFileManager.DirectoryExists(*extractDir))	{
+
+	if (PlatformFileManager.DirectoryExists(*extractDir))
+	{
 		return extractDir;
 	}
 
@@ -85,11 +101,12 @@ FString UFmuActorComponent::extractFmu(FString sourcePath)	{
 
 	FFileManagerGeneric FileMgr;
 	FString wildcard = FString::Printf(TEXT("%s.*"), *FPaths::GetBaseFilename(*tempFmuPath));
- 	FString search_path(FPaths::Combine(FmuParentPath, *wildcard));
+	FString search_path(FPaths::Combine(FmuParentPath, *wildcard));
 	UE_LOG(FMUSetup, Verbose, TEXT("Old FMU cleanup Search Path: %s"), *search_path);
 	FileMgr.FindFiles(foundFolders, *search_path, false, true);
 
-	for (FString folder : foundFolders)	{
+	for (FString folder : foundFolders)
+	{
 		FString folderPath = FmuParentPath;
 		folderPath.PathAppend(*folder, folder.Len());
 
@@ -101,7 +118,14 @@ FString UFmuActorComponent::extractFmu(FString sourcePath)	{
 	return extractDir;
 }
 
-bool UFmuActorComponent::extract(FString *sourcePath, FString *targetPath)	{
+/* 
+Extracts a ZIP compressed File from sourcePath to targetPath.
+Contains implementations for Windows and Linux
+TODO: Test Windows Implementation
+TODO: Do the selection at compile time
+ */
+bool UFmuActorComponent::extract(FString *sourcePath, FString *targetPath)
+{
 
 	if (sourcePath->IsEmpty())
 	{
@@ -111,131 +135,151 @@ bool UFmuActorComponent::extract(FString *sourcePath, FString *targetPath)	{
 	auto tempFmuPath = FPaths::ConvertRelativePathToFull(*sourcePath);
 	auto tempTargetPath = FPaths::ConvertRelativePathToFull(*targetPath);
 
-	IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
+	IPlatformFile &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 	FileManager.DeleteDirectoryRecursively(*tempTargetPath);
 	FileManager.CreateDirectory(*tempTargetPath);
 
 	UE_LOG(FMUSetup, Display, TEXT("FMU Path: %s FMU Extraction Dir: %s Platform: %s"), *tempFmuPath, *tempTargetPath, *(UGameplayStatics::GetPlatformName()));
-	
-	if ( UGameplayStatics::GetPlatformName() == "LINUX")	{
+
+	if (UGameplayStatics::GetPlatformName() == "LINUX")
+	{
 		FString unzipCommandArgs = FString::Printf(TEXT("-uo %s -d %s"), *tempFmuPath, *tempTargetPath);
 		UE_LOG(FMUSetup, Display, TEXT("Extraction command: %s"), *unzipCommandArgs);
 
 		FUnixPlatformProcess::ExecProcess(TEXT("/usr/bin/unzip"), *unzipCommandArgs, 0, 0, 0);
-
 	}
-	else {
+	else
+	{
 		UE_LOG(FMUSetup, Warning, TEXT("Platform is not LINUX, using elzip to extract FMU"));
 		elz::extractZip(std::string(TCHAR_TO_UTF8(*tempFmuPath)), std::string(TCHAR_TO_UTF8(*tempTargetPath)));
 	}
-	
+
 	return true;
 }
 
-void UFmuActorComponent::importFmuParameters()	{
+/*
+Reads the modelDescription.xml and sets experiment attributes and
+populates the modelVariables map.
+*/
+void UFmuActorComponent::importFmuParameters()
+{
 
-		FString fXmlFile = mFmuExtractPath;
-		fXmlFile = FPaths::Combine(mFmuExtractPath, TEXT("modelDescription.xml"));
+	FString fXmlFile = mFmuExtractPath;
+	fXmlFile = FPaths::Combine(mFmuExtractPath, TEXT("modelDescription.xml"));
 
-		IPlatformFile &FileManager = FPlatformFileManager::Get().GetPlatformFile();
+	IPlatformFile &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
-		if (!FileManager.FileExists(*fXmlFile))	{
-			UE_LOG(FMUSetup, Error, TEXT("No modelDesctription.xml found at %s"), *fXmlFile);
-			return;
-		}
-		
-		FXmlFile model(fXmlFile, EConstructMethod::ConstructFromFile);
-		FXmlNode *root = model.GetRootNode();
-		FXmlNode *defaultExperiment = root->FindChildNode("DefaultExperiment");
-		FXmlNode *modelVariables = root->FindChildNode("ModelVariables");
-		TArray<FXmlNode*> nodes = modelVariables->GetChildrenNodes();
-		for (FXmlNode* node : nodes)
-		{
-			FString key = node->GetAttribute("name");
-			int value = FCString::Atoi(*node->GetAttribute("valueReference"));
-			UE_LOG(FMUSetup, Display, TEXT("Found Model Var: %s : %d"), *key, value);
-			FmuVariables.Add(key, value);
-		}
-		mGuid = TCHAR_TO_UTF8(*root->GetAttribute("guid"));
-		mModelIdentifier = TCHAR_TO_UTF8(*root->GetAttribute("modelName"));;
-		mInstanceName = "instance";
-		mStartTime = FCString::Atof(*defaultExperiment->GetAttribute("startTime"));
-		mStopTime = FCString::Atof(*defaultExperiment->GetAttribute("stopTime")) * StopTimeMultiplier;
-		mTolerance = FCString::Atof(*defaultExperiment->GetAttribute("tolerance"));;
-		mTimeLastTick = mStartTime;
-		mTimeNow = mStartTime;
+	if (!FileManager.FileExists(*fXmlFile))
+	{
+		UE_LOG(FMUSetup, Error, TEXT("No modelDesctription.xml found at %s"), *fXmlFile);
+		return;
+	}
+
+	FXmlFile model(fXmlFile, EConstructMethod::ConstructFromFile);
+	FXmlNode *root = model.GetRootNode();
+	FXmlNode *defaultExperiment = root->FindChildNode("DefaultExperiment");
+	FXmlNode *modelVariables = root->FindChildNode("ModelVariables");
+	TArray<FXmlNode *> nodes = modelVariables->GetChildrenNodes();
+	for (FXmlNode *node : nodes)
+	{
+		FString key = node->GetAttribute("name");
+		int value = FCString::Atoi(*node->GetAttribute("valueReference"));
+		UE_LOG(FMUSetup, Display, TEXT("Found Model Var: %s : %d"), *key, value);
+		FmuVariables.Add(key, value);
+	}
+	mGuid = TCHAR_TO_UTF8(*root->GetAttribute("guid"));
+	mModelIdentifier = TCHAR_TO_UTF8(*root->GetAttribute("modelName"));
+	;
+	mInstanceName = "instance";
+	mStartTime = FCString::Atof(*defaultExperiment->GetAttribute("startTime"));
+	mStopTime = FCString::Atof(*defaultExperiment->GetAttribute("stopTime")) * StopTimeMultiplier;
+	mTolerance = FCString::Atof(*defaultExperiment->GetAttribute("tolerance"));
+	;
+	mTimeLastTick = mStartTime;
+	mTimeNow = mStartTime;
 }
 
-void UFmuActorComponent::EndPlay
-(
-    const EEndPlayReason::Type EndPlayReason
-) {
+void UFmuActorComponent::EndPlay(
+	const EEndPlayReason::Type EndPlayReason)
+{
 	mFmu.Reset();
 	Super::EndPlay(EndPlayReason);
 }
 
-
 // Called every frame
-void UFmuActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UFmuActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (!mLoaded)
 		return;
-	
+
 	mTimeNow += DeltaTime;
 	if (finiteSimulation && mTimeLastTick >= mStopTime)
 		return;
 
-	if (staticTicking)	{
+	if (staticTicking)
+	{
 		if (!(mTimeNow > mTimeLastTick + stepSize))
 			return;
 		mTimeLastTick += stepSize;
 		mFmu->doStep(stepSize);
-	} else {
+	}
+	else
+	{
 		mTimeLastTick += DeltaTime;
 		mFmu->doStep(DeltaTime);
 	}
 }
 
-float UFmuActorComponent::getReal(FString Name) {
-    return isVariablePresent(Name) ? mFmu->getReal(FmuVariables[Name]) : NAN;
+float UFmuActorComponent::getReal(FString Name)
+{
+	return isVariablePresent(Name) ? mFmu->getReal(FmuVariables[Name]) : NAN;
 }
 
-void UFmuActorComponent::setReal(FString Name, float Value) {
+void UFmuActorComponent::setReal(FString Name, float Value)
+{
 	if (isVariablePresent(Name))
 		mFmu->setReal(FmuVariables[Name], Value);
 }
 
-bool UFmuActorComponent::getBoolean(FString Name) {
-    return isVariablePresent(Name) ? mFmu->getBoolean(FmuVariables[Name]) : false;
+bool UFmuActorComponent::getBoolean(FString Name)
+{
+	return isVariablePresent(Name) ? mFmu->getBoolean(FmuVariables[Name]) : false;
 }
 
-void UFmuActorComponent::setBoolean(FString Name, bool Value) {
+void UFmuActorComponent::setBoolean(FString Name, bool Value)
+{
 	if (isVariablePresent(Name))
 		mFmu->setBoolean(FmuVariables[Name], Value);
 }
 
-int UFmuActorComponent::getInteger(FString Name) {
-    return isVariablePresent(Name) ? mFmu->getInteger(FmuVariables[Name]) : -1;
+int UFmuActorComponent::getInteger(FString Name)
+{
+	return isVariablePresent(Name) ? mFmu->getInteger(FmuVariables[Name]) : -1;
 }
 
-void UFmuActorComponent::setInteger(FString Name, int Value) {
+void UFmuActorComponent::setInteger(FString Name, int Value)
+{
 	if (isVariablePresent(Name))
 		mFmu->setInteger(FmuVariables[Name], Value);
 }
 
-FString UFmuActorComponent::getString(FString Name) {
-    return isVariablePresent(Name) ? FString(mFmu->getString(FmuVariables[Name]).c_str()) : FString("Invalid String Name");
+FString UFmuActorComponent::getString(FString Name)
+{
+	return isVariablePresent(Name) ? FString(mFmu->getString(FmuVariables[Name]).c_str()) : FString("Invalid String Name");
 }
 
-void UFmuActorComponent::setString(FString Name, FString Value) {
+void UFmuActorComponent::setString(FString Name, FString Value)
+{
 	if (isVariablePresent(Name))
 		mFmu->setString(FmuVariables[Name], std::string(TCHAR_TO_UTF8(*Value)));
 }
 
-bool UFmuActorComponent::isVariablePresent(FString Name)	{
-	if (!FmuVariables.Contains(Name))	{
+bool UFmuActorComponent::isVariablePresent(FString Name)
+{
+	if (!FmuVariables.Contains(Name))
+	{
 		UE_LOG(FMURuntime, Error, TEXT("No variable with name %s found in FMU: %s"), *Name, *FmuPath.FilePath);
 		return false;
 	}
