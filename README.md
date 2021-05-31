@@ -5,7 +5,9 @@
 
 - This MVP relies on the [FMIKit repositorty](https://github.com/CATIA-Systems/FMIKit-Simulink) (non-simulink portion)
 - Special thanks to Torsten Sommer for his work on FMIKit!
-- Architecture based on: [ORNL-Modelica/UnrealEngine-FMIPlugin](https://github.com/ORNL-Modelica/UnrealEngine-FMIPlugin)
+- Architecture and some of the code (XML parser) based on: [ORNL-Modelica/UnrealEngine-FMIPlugin](https://github.com/ORNL-Modelica/UnrealEngine-FMIPlugin)
+
+- Thanks to the Chair of Mechatronics at the University Augsburg, Germany for allowing me to work on this as a research project.
 
 # Prerequistes
 
