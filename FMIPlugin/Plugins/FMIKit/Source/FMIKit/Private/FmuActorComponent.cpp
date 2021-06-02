@@ -23,6 +23,7 @@ UFmuActorComponent::UFmuActorComponent()
 Checks if the fmuPath was changed and extracts the FMU and imports the parameters.
 TODO: model variables do not show up in the blueprint user interface.
 */
+#if WITH_EDITOR
 void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent)
 {
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
@@ -35,6 +36,7 @@ void UFmuActorComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyC
 	}
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+#endif
 
 void UFmuActorComponent::InitializeComponent()
 {

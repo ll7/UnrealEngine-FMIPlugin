@@ -44,7 +44,7 @@ Follow the following steps to get this project up and running on your own comput
 # Todo
 
 - ~~Ship with Conan dependency prebuilts~~
-- Standalone Play does not work currently
+- ~~Standalone Play does not work currently~~
 - Implement distinctions for causality and variability for FMI variables
 - Update documentation
 - Write test cases
