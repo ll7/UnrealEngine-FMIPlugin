@@ -19,14 +19,6 @@ This work was tested using the following. It may work on something else but no g
 - [Conan UE4 Cli](https://github.com/adamrehn/conan-ue4cli) and l0wl3vels fork of [ue4-conan-recipes](https://github.com/l0wl3vel/ue4-conan-recipes)
 - IDE: VS Code
 
-Included FMUs
-
-- PT2.fmu
-- Radaufhaengung.fmu: Wheel suspension with one point fixed (Did not get this to work)
-- RadaufhaengungNeu.fmu: New different implementation of a wheel suspension
-- The Modelica files are included in the `Modelica` folder.
-- FMUs are generated using openmodelica 1.17.0 with modelica-4.0.0 with source code included, so a tool like [fmpy](https://github.com/CATIA-Systems/FMPy) can be used to easily recompile on other platforms.
-
 # Installation
 
 This repo contains the pre-compiled dependencies for UE4.24. For any other version you need to clone and build the dependencies libzip and elzip from [my ue4-conan-recipes fork](https://github.com/l0wl3vel/ue4-conan-recipes)
@@ -39,8 +31,20 @@ Follow the following steps to get this project up and running on your own comput
   pathtoUE/GenerateProjectFiles.sh -projectfiles -project='pathto/UnrealEngine-FMIPlugin/FMIPlugin/FMIPlugin.uproject' -game -rocket -progress -VSCode
 
 - Open the FMIPlugin/FMIPlugin.code-workspace in VS Code
-- Press CTRL+P and select "Task: Run Build Task" and select "FMIKitEditor Linux Development Build"
+- Press CTRL+P and select "Task: Run Build Task" and select "FMIKitPluginEditor Linux Development Build" and "FMIKitPluginEditor Linux Development Build"
 - When the build finished successfully open the FMIPlugin.uproject in UE4
+- When warned about the engine version click on "more options" and "Convert in place" (This may take a while)
+
+
+# Included FMUs
+
+The Modelica files are included in the `Modelica` folder.
+
+FMUs are generated using openmodelica 1.17.0 with modelica-4.0.0 with source code included, so a tool like [fmpy](https://github.com/CATIA-Systems/FMPy) can be used to easily recompile on other platforms.
+
+- PT2.fmu
+- Radaufhaengung.fmu: Wheel suspension with one point fixed (Did not get this to work)
+- RadaufhaengungNeu.fmu: New different implementation of a wheel suspension
 
 # Todo
 
