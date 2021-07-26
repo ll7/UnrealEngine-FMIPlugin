@@ -38,7 +38,7 @@ Follow the following steps to get this project up and running on your own comput
   pathtoUE/GenerateProjectFiles.sh -projectfiles -project='pathto/UnrealEngine-FMIPlugin/FMIPlugin/FMIPlugin.uproject' -game -rocket -progress -VSCode
 
 - Open the FMIPlugin/FMIPlugin.code-workspace in VS Code
-- Press CTRL+P and select "Task: Run Build Task" and select "FMIKitEditor Linux Development Build"
+- Press CTRL+Shift+P and select "Task: Run Build Task" and select "FMIKit Linux Development Build" **and** "FMIKitEditor Linux Development Build"
 - When the build finished successfully open the FMIPlugin.uproject in UE4
 
 # Todo
