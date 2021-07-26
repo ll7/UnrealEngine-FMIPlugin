@@ -71,9 +71,3 @@ Build/*/**
 # Cache files for the editor to use
 **/DerivedDataCache
 
-# .fmu extraction folders
-test/
-BouncingBall/
-ies/
-FMIPlugin/Content/
-FMIPlugin/Brushify_Shaders.png
