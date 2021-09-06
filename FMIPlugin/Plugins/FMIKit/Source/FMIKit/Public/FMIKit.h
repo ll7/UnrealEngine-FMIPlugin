@@ -14,9 +14,4 @@ public:
 	virtual void ShutdownModule() override;
 
 private:
-	bool SearchForDllPath(FString _searchBase, FString _dllName);
-
-	int handle = 0;
-	void *DLLHandle;
-	void *DLLHandle2;
 };
